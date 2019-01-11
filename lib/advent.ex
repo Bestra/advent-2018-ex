@@ -75,19 +75,22 @@ defmodule Advent do
     end
 
     defmodule Input do
-      defstruct x: 0, y: 0
+      defstruct x: 0, y: 0, name: nil
     end
 
-    def parse_line(l) do
+    def parse_line({l, i}) do
       [x, y] = String.split(l, ", ")
 
       {a, _} = Integer.parse(x)
       {b, _} = Integer.parse(y)
-      %Input{x: a, y: b}
+      c = ?i + 65
+      %Input{x: a, y: b, name: c}
     end
 
     @spec parse_string_input(list(binary)) :: [Input.t]
-    def parse_string_input(s), do: Enum.map(s, &parse_line/1)
+    def parse_string_input(s) do
+       Enum.with_index(s) |> Enum.map(&parse_line/1)
+    end
 
     def bounding_box(inputs) do
       xs = Enum.map(inputs, &(Map.get(&1, :x)))
@@ -123,8 +126,8 @@ defmodule Advent do
     end
 
     def nearest(%GridCell{x: px, y: py}, inputs) do
-      Enum.map(inputs, fn {%Input{x: x, y: y}, i} ->
-        %{distance: abs(x - px) + abs(y - py), idx: i}
+      Enum.map(inputs, fn {%Input{x: x, y: y} = ix, i} ->
+        %{distance: abs(x - px) + abs(y - py), idx: ix}
       end)
       |> Enum.sort_by(fn %{distance: d} -> d end)
       |> List.first()
@@ -140,6 +143,26 @@ defmodule Advent do
       %{d | grid: updated_grid}
     end
 
+    def is_input(grid_cell, inputs) do
+      Enum.find(inputs, fn i ->
+        i.x == grid_cell.x && i.y == grid_cell.y
+      end)
+    end
+
+    def pretty_print(%Day6{grid: g, bounding_box: b, inputs: i}) do
+      {{x1, _}, {x2, _}} = b
+      IO.puts("#{x2 + 1 - x1} cells wide")
+      Enum.chunk_every(g, x2 - x1 + 1)
+      |> Enum.map_join("\n", fn row ->
+        Enum.map(row, fn c ->
+          if c.nearest.x == c.x && c.nearest.y == c.y do
+          else
+            c.nearest
+          end
+        end&(&1.nearest + 97)) |> List.to_string()
+      end)
+    end
+
     def nearest_groups(%Day6{grid: g}) do
       g |> Enum.group_by(fn %GridCell{nearest: n} -> n end)
     end
@@ -148,6 +171,29 @@ defmodule Advent do
       :maps.filter(fn _, v ->
         Enum.all?(v, fn %GridCell{p: p} -> p == :interior end)
       end, group_map)
+    end
+
+    def process(i) do
+      day6 = i
+      |> make()
+      |> set_nearest()
+
+      IO.inspect(day6.bounding_box, label: :bounds)
+
+      day6
+      |> nearest_groups()
+      |> interior_groups()
+      |> Map.to_list()
+      |> Enum.map(fn {k, v} -> {k, length(v)} end)
+      |> Enum.sort_by(fn {_, v} -> v end)
+      |> Enum.reverse()
+      |> IO.inspect(label: :foo)
+      |> hd()
+    end
+
+    def part1() do
+      Advent.read_file(6)
+      |> process()
     end
   end
 end

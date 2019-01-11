@@ -54,5 +54,16 @@ defmodule AdventTest do
 
       assert res == {4, 17}
     end
+
+    test "pretty_print", %{input: i} do
+      res = i
+      |> Day6.make()
+      |> Day6.set_nearest()
+      |> Day6.pretty_print()
+
+      IO.puts(res)
+
+      assert res == {4, 17}
+    end
   end
 end
