@@ -46,9 +46,13 @@ defmodule AdventTest do
       |> Day6.set_nearest()
       |> Day6.nearest_groups()
       |> Day6.interior_groups()
-      |> Map.keys()
+      |> Map.to_list()
+      |> Enum.map(fn {k, v} -> {k, length(v)} end)
+      |> Enum.sort_by(fn {_, v} -> v end)
+      |> Enum.reverse()
+      |> hd()
 
-      assert res == [3, 4]
+      assert res == {4, 17}
     end
   end
 end
